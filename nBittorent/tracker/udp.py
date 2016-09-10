@@ -1,3 +1,4 @@
+from nBittorent.peer import Peer
 import struct
 import socket
 import random
@@ -57,9 +58,16 @@ class UDPTracker(object):
 
         resp = self.request(self.connection_id, self.action.announce, data)
         interval, leechers, seeders = struct.unpack('!III', resp[:12])
+        resp = resp[12:]
         peers_num = leechers + seeders
         peers = []
         for i in range(peers_num):
-            ip, port = struct.unpack('IH', resp[12 + i * 6: 12 + (i + 1) * 6])
-            peers.append((socket.inet_ntoa(struct.pack('I',socket.htonl(ip))), port))
+            s = resp[i * 6: i * 6 + 6]
+            ip = socket.inet_ntoa(s[:4])
+            port = struct.unpack('!H', s[4:])[0]
+            addr = (ip, port)
+            # peer = Peer(addr, info_hash, peer_id)
+            peers.append(addr)
+            if addr == ('210.136.85.235', 43691):
+                peer = Peer(addr, info_hash, peer_id)
         return peers
